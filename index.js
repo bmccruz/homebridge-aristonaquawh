@@ -19,7 +19,7 @@ class AristonWaterHeater {
       this.model = config["model"] || "VELIS Tech Dry";
       this.serial_number = config["serial_number"] || "123456789";
 
-      this.interval = 60;
+      this.interval = 600;
       this.temperature = 0;
 
       this.informationService = new hap.Service.AccessoryInformation();

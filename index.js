@@ -317,4 +317,4 @@ function switchPowerAPI(that, enabled) {
       that.log("Water heater " + (enabled ? "ON" : "OFF"));
     });
   });
-  
+}

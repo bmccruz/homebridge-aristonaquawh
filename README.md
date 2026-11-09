@@ -1,4 +1,4 @@
-![alt text](image.png)
+☕ Support the project: [☕ Buy Me a Coffee](https://buymeacoffee.com/bmccruz)
 
 # homebridge-aristonaquawh
 Homebridge module for Ariston Aqua Water Heater
@@ -37,9 +37,3 @@ Example accessory config (needs to be added to the Homebridge `config.json`):
      }
  ]
   ```
-
-# Support
-
-If this plugin has been useful to you, consider supporting its development:
-
-☕ https://buymeacoffee.com/bmccruz

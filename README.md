@@ -35,7 +35,3 @@ Example accessory config (needs to be added to the Homebridge `config.json`):
      }
  ]
   ```
-
-# Todo
-
-Increase or decrease the temperature via plugin.

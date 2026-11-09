@@ -32,6 +32,8 @@ class AristonWaterHeater {
       this.targetTemperature = 80;
       this.heaterOn = false;
 
+      this.cookieJar = request.jar();
+
       this.informationService = new hap.Service.AccessoryInformation();
 
       this.informationService
@@ -68,10 +70,9 @@ class AristonWaterHeater {
           hap.Characteristic.TargetHeatingCoolingState
         )
         .setProps({
-          validValues: [
-            hap.Characteristic.TargetHeatingCoolingState.OFF,
-            hap.Characteristic.TargetHeatingCoolingState.HEAT
-          ]
+          minValue: 0,
+          maxValue: 1,
+          minStep: 1
         })
         .onGet(this.getTargetHeatingState.bind(this))
         .onSet(this.setPower.bind(this));
@@ -123,7 +124,13 @@ class AristonWaterHeater {
 
   setTargetTemperature(value) {
 
-    const newTemp = Math.round(value);
+    const newTemp = Math.max(
+      40,
+      Math.min(
+        80,
+        Math.round(value)
+      )
+    );
 
     changeTemperatureAPI(
       this,
@@ -137,8 +144,8 @@ class AristonWaterHeater {
   setPower(value) {
 
     const enabled =
-      value ===
-      hap.Characteristic.TargetHeatingCoolingState.HEAT;
+      value !==
+      hap.Characteristic.TargetHeatingCoolingState.OFF;
 
     switchPowerAPI(
       this,
@@ -179,7 +186,7 @@ function getDeviceDataAPI(that) {
       RememberMe: false
     },
 
-    jar: true,
+    jar: that.cookieJar,
     json: true,
 
     maxAttempts: 3,
@@ -205,7 +212,7 @@ function getDeviceDataAPI(that) {
         "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" +
         that.plantID,
 
-      jar: true,
+      jar: that.cookieJar,
       json: true,
 
       maxAttempts: 3,
@@ -297,7 +304,7 @@ function changeTemperatureAPI(
       RememberMe: false
     },
 
-    jar: true,
+    jar: that.cookieJar,
     json: true,
 
     rejectUnauthorized: false
@@ -321,7 +328,7 @@ function changeTemperatureAPI(
         that.plantID +
         "/temperature",
 
-      jar: true,
+      jar: that.cookieJar,
       json: true,
 
       body: {
@@ -369,7 +376,7 @@ function switchPowerAPI(
       RememberMe: false
     },
 
-    jar: true,
+    jar: that.cookieJar,
     json: true,
 
     rejectUnauthorized: false
@@ -393,7 +400,7 @@ function switchPowerAPI(
         that.plantID +
         "/switch",
 
-      jar: true,
+      jar: that.cookieJar,
       json: true,
 
       body: enabled,

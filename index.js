@@ -42,16 +42,15 @@ class AristonWaterHeater {
         .setCharacteristic(hap.Characteristic.Model, this.model)
         .setCharacteristic(hap.Characteristic.SerialNumber, this.serial_number);
 
-      // 1. Alterado para o Serviço HeaterCooler
-      this.heaterCoolerService = new hap.Service.HeaterCooler(this.name);
+      this.thermostatService =
+        new hap.Service.Thermostat(this.name);
 
-      this.heaterCoolerService
+      this.thermostatService
         .getCharacteristic(hap.Characteristic.CurrentTemperature)
         .onGet(this.getCurrentTemperature.bind(this));
 
-      // 2. No HeaterCooler, o slider de setpoint usa HeatingThresholdTemperature
-      this.heaterCoolerService
-        .getCharacteristic(hap.Characteristic.HeatingThresholdTemperature)
+      this.thermostatService
+        .getCharacteristic(hap.Characteristic.TargetTemperature)
         .setProps({
           minValue: 40,
           maxValue: 80,
@@ -60,24 +59,20 @@ class AristonWaterHeater {
         .onGet(this.getTargetTemperature.bind(this))
         .onSet(this.setTargetTemperature.bind(this));
 
-      // 3. Estado Atual: Apenas Desligado (INACTIVE) ou Aquecendo (HEATING)
-      this.heaterCoolerService
-        .getCharacteristic(hap.Characteristic.CurrentHeaterCoolerState)
-        .setProps({
-          validValues: [
-            hap.Characteristic.CurrentHeaterCoolerState.INACTIVE,
-            hap.Characteristic.CurrentHeaterCoolerState.HEATING
-          ]
-        })
+      this.thermostatService
+        .getCharacteristic(
+          hap.Characteristic.CurrentHeatingCoolingState
+        )
         .onGet(this.getCurrentHeatingState.bind(this));
 
-      // 4. Estado Alvo: Força aceitar apenas o modo HEAT (Aquecer)
-      this.heaterCoolerService
-        .getCharacteristic(hap.Characteristic.TargetHeaterCoolerState)
+      this.thermostatService
+        .getCharacteristic(
+          hap.Characteristic.TargetHeatingCoolingState
+        )
         .setProps({
-          validValues: [
-            hap.Characteristic.TargetHeaterCoolerState.HEAT
-          ]
+          minValue: 0,
+          maxValue: 1,
+          minStep: 1
         })
         .onGet(this.getTargetHeatingState.bind(this))
         .onSet(this.setPower.bind(this));
@@ -90,39 +85,45 @@ class AristonWaterHeater {
       );
 
     } catch (error) {
+
       this.log("Error module " + error);
     }
   }
 
   getServices() {
+
     return [
       this.informationService,
-      this.heaterCoolerService
+      this.thermostatService
     ];
   }
 
   getCurrentTemperature() {
+
     return this.temperature;
   }
 
   getTargetTemperature() {
+
     return this.targetTemperature;
   }
 
   getCurrentHeatingState() {
+
     return this.heaterOn
-      ? hap.Characteristic.CurrentHeaterCoolerState.HEATING
-      : hap.Characteristic.CurrentHeaterCoolerState.INACTIVE;
+      ? hap.Characteristic.CurrentHeatingCoolingState.HEAT
+      : hap.Characteristic.CurrentHeatingCoolingState.OFF;
   }
 
   getTargetHeatingState() {
-    // Como forçámos apenas o HEAT nas props, retornamos sempre HEAT quando ligado
+
     return this.heaterOn
-      ? hap.Characteristic.TargetHeaterCoolerState.HEAT
-      : hap.Characteristic.TargetHeaterCoolerState.HEAT;
+      ? hap.Characteristic.TargetHeatingCoolingState.HEAT
+      : hap.Characteristic.TargetHeatingCoolingState.OFF;
   }
 
   setTargetTemperature(value) {
+
     const newTemp = Math.max(
       40,
       Math.min(
@@ -141,96 +142,137 @@ class AristonWaterHeater {
   }
 
   setPower(value) {
-    // Na app Casa, clicar no botão de ligar/desligar principal altera o Active
-    // Mas se alterarem o modo ou usarem automações, validamos pelo estado do botão
-    this.log("SetPower acionado com o valor: " + value);
+
+    const enabled =
+      value !==
+      hap.Characteristic.TargetHeatingCoolingState.OFF;
+
+    switchPowerAPI(
+      this,
+      enabled
+    );
+
+    this.heaterOn = enabled;
   }
 
   updateDeviceData() {
+
     try {
+
       this.log("Updating water heater data");
+
       getDeviceDataAPI(this);
+
     } catch (error) {
-      this.log("Error updating device data " + error);
+
+      this.log(
+        "Error updating device data " +
+        error
+      );
     }
   }
 }
 
 function getDeviceDataAPI(that) {
+
   request.post({
-    url: "https://www.ariston-net.remotethermo.com/R2/Account/Login",
+
+    url:
+      "https://www.ariston-net.remotethermo.com/R2/Account/Login",
+
     form: {
       Email: that.username,
       Password: that.password,
       RememberMe: false
     },
+
     jar: that.cookieJar,
     json: true,
+
     maxAttempts: 3,
     retryDelay: 6000,
-    retryStrategy: request.RetryStrategies.HTTPOrNetworkError,
+    retryStrategy:
+      request.RetryStrategies.HTTPOrNetworkError,
+
     rejectUnauthorized: false
+
   },
   function(err, resp) {
+
     if (err || resp.statusCode !== 200) {
+
       that.log("Login failed");
+
       return;
     }
 
     request({
-      url: "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" + that.plantID,
+
+      url:
+        "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" +
+        that.plantID,
+
       jar: that.cookieJar,
       json: true,
+
       maxAttempts: 3,
       retryDelay: 6000,
-      retryStrategy: request.RetryStrategies.HTTPOrNetworkError,
+      retryStrategy:
+        request.RetryStrategies.HTTPOrNetworkError,
+
       rejectUnauthorized: false
+
     },
     function(err, resp, body) {
+
       if (err || resp.statusCode !== 200) {
-        that.log("Reading device data failed");
+
+        that.log(
+          "Reading device data failed"
+        );
+
         return;
       }
 
       if (body) {
+
         if (typeof body.temp === "number") {
           that.temperature = body.temp;
         }
+
         if (typeof body.procReqTemp === "number") {
-          that.targetTemperature = body.procReqTemp;
+          that.targetTemperature =
+            body.procReqTemp;
         }
+
         if (typeof body.on === "boolean") {
-          that.heaterOn = body.on;
+          that.heaterOn =
+            body.on;
         }
       }
 
-      // Atualizações de características corrigidas para o novo serviço HeaterCooler
-      that.heaterCoolerService.updateCharacteristic(
+      that.thermostatService.updateCharacteristic(
         hap.Characteristic.CurrentTemperature,
         that.temperature
       );
 
-      that.heaterCoolerService.updateCharacteristic(
-        hap.Characteristic.HeatingThresholdTemperature,
+      that.thermostatService.updateCharacteristic(
+        hap.Characteristic.TargetTemperature,
         that.targetTemperature
       );
 
-      that.heaterCoolerService.updateCharacteristic(
-        hap.Characteristic.CurrentHeaterCoolerState,
+      that.thermostatService.updateCharacteristic(
+        hap.Characteristic.CurrentHeatingCoolingState,
         that.heaterOn
-          ? hap.Characteristic.CurrentHeaterCoolerState.HEATING
-          : hap.Characteristic.CurrentHeaterCoolerState.INACTIVE
+          ? hap.Characteristic.CurrentHeatingCoolingState.HEAT
+          : hap.Characteristic.CurrentHeatingCoolingState.OFF
       );
 
-      that.heaterCoolerService.updateCharacteristic(
-        hap.Characteristic.TargetHeaterCoolerState,
-        hap.Characteristic.TargetHeaterCoolerState.HEAT
-      );
-
-      // Sincroniza também a característica Active (LIGADO/DESLIGADO nativo do HeaterCooler)
-      that.heaterCoolerService.updateCharacteristic(
-        hap.Characteristic.Active,
-        that.heaterOn ? hap.Characteristic.Active.ACTIVE : hap.Characteristic.Active.INACTIVE
+      that.thermostatService.updateCharacteristic(
+        hap.Characteristic.TargetHeatingCoolingState,
+        that.heaterOn
+          ? hap.Characteristic.TargetHeatingCoolingState.HEAT
+          : hap.Characteristic.TargetHeatingCoolingState.OFF
       );
 
       that.log(
@@ -245,76 +287,142 @@ function getDeviceDataAPI(that) {
   });
 }
 
-function changeTemperatureAPI(that, newTemp, oldTemp) {
+function changeTemperatureAPI(
+  that,
+  newTemp,
+  oldTemp
+) {
+
   request.post({
-    url: "https://www.ariston-net.remotethermo.com/R2/Account/Login",
+
+    url:
+      "https://www.ariston-net.remotethermo.com/R2/Account/Login",
+
     form: {
       Email: that.username,
       Password: that.password,
       RememberMe: false
     },
+
     jar: that.cookieJar,
     json: true,
+
     rejectUnauthorized: false
+
   },
   function(err, resp) {
+
     if (err || resp.statusCode !== 200) {
-      that.log("Login failed before changing temperature");
+
+      that.log(
+        "Login failed before changing temperature"
+      );
+
       return;
     }
 
     request.post({
-      url: "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" + that.plantID + "/temperature",
+
+      url:
+        "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" +
+        that.plantID +
+        "/temperature",
+
       jar: that.cookieJar,
       json: true,
+
       body: {
         eco: false,
         new: newTemp,
         old: oldTemp
       },
+
       rejectUnauthorized: false
+
     },
     function(err, resp) {
+
       if (err || resp.statusCode !== 200) {
-        that.log("Changing temperature failed");
+
+        that.log(
+          "Changing temperature failed"
+        );
+
         return;
       }
-      that.log("Temperature changed to " + newTemp + "°C");
+
+      that.log(
+        "Temperature changed to " +
+        newTemp +
+        "°C"
+      );
     });
   });
 }
 
-function switchPowerAPI(that, enabled) {
+function switchPowerAPI(
+  that,
+  enabled
+) {
+
   request.post({
-    url: "https://www.ariston-net.remotethermo.com/R2/Account/Login",
+
+    url:
+      "https://www.ariston-net.remotethermo.com/R2/Account/Login",
+
     form: {
       Email: that.username,
       Password: that.password,
       RememberMe: false
     },
+
     jar: that.cookieJar,
     json: true,
+
     rejectUnauthorized: false
+
   },
   function(err, resp) {
+
     if (err || resp.statusCode !== 200) {
-      that.log("Login failed before switch");
+
+      that.log(
+        "Login failed before switch"
+      );
+
       return;
     }
 
     request.post({
-      url: "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" + that.plantID + "/switch",
+
+      url:
+        "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" +
+        that.plantID +
+        "/switch",
+
       jar: that.cookieJar,
       json: true,
+
       body: enabled,
+
       rejectUnauthorized: false
+
     },
     function(err, resp) {
+
       if (err || resp.statusCode !== 200) {
-        that.log("Switch failed");
+
+        that.log(
+          "Switch failed"
+        );
+
         return;
       }
-      that.log("Water heater " + (enabled ? "ON" : "OFF"));
+
+      that.log(
+        "Water heater " +
+        (enabled ? "ON" : "OFF")
+      );
     });
   });
 }

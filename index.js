@@ -30,57 +30,38 @@ class AristonWaterHeater {
 
       this.temperature = 0;
       this.targetTemperature = 80;
-      this.heaterOn = true;
+      this.heaterOn = false;
 
       this.informationService = new hap.Service.AccessoryInformation();
 
       this.informationService
-        .setCharacteristic(
-          hap.Characteristic.Name,
-          this.name
-        )
-        .setCharacteristic(
-          hap.Characteristic.Manufacturer,
-          "Ariston"
-        )
-        .setCharacteristic(
-          hap.Characteristic.Model,
-          this.model
-        )
-        .setCharacteristic(
-          hap.Characteristic.SerialNumber,
-          this.serial_number
-        );
+        .setCharacteristic(hap.Characteristic.Name, this.name)
+        .setCharacteristic(hap.Characteristic.Manufacturer, "Ariston")
+        .setCharacteristic(hap.Characteristic.Model, this.model)
+        .setCharacteristic(hap.Characteristic.SerialNumber, this.serial_number);
 
       this.thermostatService =
         new hap.Service.Thermostat(this.name);
 
       this.thermostatService
-        .getCharacteristic(
-          hap.Characteristic.CurrentTemperature
-        )
-        .onGet(
-          this.getCurrentTemperature.bind(this)
-        );
+        .getCharacteristic(hap.Characteristic.CurrentTemperature)
+        .onGet(this.getCurrentTemperature.bind(this));
 
       this.thermostatService
-        .getCharacteristic(
-          hap.Characteristic.TargetTemperature
-        )
-        .onGet(
-          this.getTargetTemperature.bind(this)
-        )
-        .onSet(
-          this.setTargetTemperature.bind(this)
-        );
+        .getCharacteristic(hap.Characteristic.TargetTemperature)
+        .setProps({
+          minValue: 40,
+          maxValue: 80,
+          minStep: 1
+        })
+        .onGet(this.getTargetTemperature.bind(this))
+        .onSet(this.setTargetTemperature.bind(this));
 
       this.thermostatService
         .getCharacteristic(
           hap.Characteristic.CurrentHeatingCoolingState
         )
-        .onGet(
-          this.getCurrentHeatingState.bind(this)
-        );
+        .onGet(this.getCurrentHeatingState.bind(this));
 
       this.thermostatService
         .getCharacteristic(
@@ -92,12 +73,8 @@ class AristonWaterHeater {
             hap.Characteristic.TargetHeatingCoolingState.HEAT
           ]
         })
-        .onGet(
-          this.getTargetHeatingState.bind(this)
-        )
-        .onSet(
-          this.setPower.bind(this)
-        );
+        .onGet(this.getTargetHeatingState.bind(this))
+        .onSet(this.setPower.bind(this));
 
       this.updateDeviceData();
 
@@ -106,13 +83,14 @@ class AristonWaterHeater {
         this.interval * 1000
       );
 
-    }
-    catch (error) {
+    } catch (error) {
+
       this.log("Error module " + error);
     }
   }
 
   getServices() {
+
     return [
       this.informationService,
       this.thermostatService
@@ -120,10 +98,12 @@ class AristonWaterHeater {
   }
 
   getCurrentTemperature() {
+
     return this.temperature;
   }
 
   getTargetTemperature() {
+
     return this.targetTemperature;
   }
 
@@ -176,8 +156,7 @@ class AristonWaterHeater {
 
       getDeviceDataAPI(this);
 
-    }
-    catch (error) {
+    } catch (error) {
 
       this.log(
         "Error updating device data " +
@@ -189,18 +168,42 @@ class AristonWaterHeater {
 
 function getDeviceDataAPI(that) {
 
-  try {
+  request.post({
 
-    request.post({
+    url:
+      "https://www.ariston-net.remotethermo.com/R2/Account/Login",
+
+    form: {
+      Email: that.username,
+      Password: that.password,
+      RememberMe: false
+    },
+
+    jar: true,
+    json: true,
+
+    maxAttempts: 3,
+    retryDelay: 6000,
+    retryStrategy:
+      request.RetryStrategies.HTTPOrNetworkError,
+
+    rejectUnauthorized: false
+
+  },
+  function(err, resp) {
+
+    if (err || resp.statusCode !== 200) {
+
+      that.log("Login failed");
+
+      return;
+    }
+
+    request({
 
       url:
-        "https://www.ariston-net.remotethermo.com/R2/Account/Login",
-
-      form: {
-        Email: that.username,
-        Password: that.password,
-        RememberMe: false
-      },
+        "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" +
+        that.plantID,
 
       jar: true,
       json: true,
@@ -213,77 +216,68 @@ function getDeviceDataAPI(that) {
       rejectUnauthorized: false
 
     },
-    function(err, resp) {
+    function(err, resp, body) {
 
       if (err || resp.statusCode !== 200) {
 
         that.log(
-          "Login failed: " +
-          err
+          "Reading device data failed"
         );
 
         return;
       }
 
-      request({
+      if (body) {
 
-        url:
-          "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" +
-          that.plantID,
-
-        jar: true,
-        json: true,
-
-        maxAttempts: 3,
-        retryDelay: 6000,
-        retryStrategy:
-          request.RetryStrategies.HTTPOrNetworkError,
-
-        rejectUnauthorized: false
-
-      },
-      function(err, resp, body) {
-
-        if (err || resp.statusCode !== 200) {
-
-          that.log(
-            "Failed reading data: " +
-            err
-          );
-
-          return;
+        if (typeof body.temp === "number") {
+          that.temperature = body.temp;
         }
 
-        that.temperature =
-          body.temp;
+        if (typeof body.procReqTemp === "number") {
+          that.targetTemperature =
+            body.procReqTemp;
+        }
 
-        that.targetTemperature =
-          body.procReqTemp;
+        if (typeof body.on === "boolean") {
+          that.heaterOn =
+            body.on;
+        }
+      }
 
-        that.heaterOn =
-          body.on;
+      that.thermostatService.updateCharacteristic(
+        hap.Characteristic.CurrentTemperature,
+        that.temperature
+      );
 
-        that.log(
-          "Current Temp: " +
-          that.temperature +
-          "°C | Target Temp: " +
-          that.targetTemperature +
-          "°C | Power: " +
-          (that.heaterOn
-            ? "ON"
-            : "OFF")
-        );
-      });
+      that.thermostatService.updateCharacteristic(
+        hap.Characteristic.TargetTemperature,
+        that.targetTemperature
+      );
+
+      that.thermostatService.updateCharacteristic(
+        hap.Characteristic.CurrentHeatingCoolingState,
+        that.heaterOn
+          ? hap.Characteristic.CurrentHeatingCoolingState.HEAT
+          : hap.Characteristic.CurrentHeatingCoolingState.OFF
+      );
+
+      that.thermostatService.updateCharacteristic(
+        hap.Characteristic.TargetHeatingCoolingState,
+        that.heaterOn
+          ? hap.Characteristic.TargetHeatingCoolingState.HEAT
+          : hap.Characteristic.TargetHeatingCoolingState.OFF
+      );
+
+      that.log(
+        "Current: " +
+        that.temperature +
+        "°C Target: " +
+        that.targetTemperature +
+        "°C Power: " +
+        (that.heaterOn ? "ON" : "OFF")
+      );
     });
-
-  }
-  catch (error) {
-
-    that.log(
-      "getDeviceDataAPI error: " +
-      error
-    );
-  }
+  });
 }
 
 function changeTemperatureAPI(
@@ -314,7 +308,7 @@ function changeTemperatureAPI(
     if (err || resp.statusCode !== 200) {
 
       that.log(
-        "Login failed before temperature change"
+        "Login failed before changing temperature"
       );
 
       return;
@@ -339,13 +333,12 @@ function changeTemperatureAPI(
       rejectUnauthorized: false
 
     },
-    function(err, resp, body) {
+    function(err, resp) {
 
       if (err || resp.statusCode !== 200) {
 
         that.log(
-          "Temperature change failed: " +
-          err
+          "Changing temperature failed"
         );
 
         return;
@@ -387,7 +380,7 @@ function switchPowerAPI(
     if (err || resp.statusCode !== 200) {
 
       that.log(
-        "Login failed before power switch"
+        "Login failed before switch"
       );
 
       return;
@@ -408,13 +401,12 @@ function switchPowerAPI(
       rejectUnauthorized: false
 
     },
-    function(err, resp, body) {
+    function(err, resp) {
 
       if (err || resp.statusCode !== 200) {
 
         that.log(
-          "Power switch failed: " +
-          err
+          "Switch failed"
         );
 
         return;
@@ -422,9 +414,7 @@ function switchPowerAPI(
 
       that.log(
         "Water heater " +
-        (enabled
-          ? "ON"
-          : "OFF")
+        (enabled ? "ON" : "OFF")
       );
     });
   });

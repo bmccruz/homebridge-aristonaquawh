@@ -1,6 +1,6 @@
 {
   "name": "homebridge-aristonaquawh",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Homebridge module for Ariston Aqua Water Heater",
   "main": "index.js",
   "engines": {

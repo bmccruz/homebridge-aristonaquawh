@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="banner.jpg" alt="Software Banner" width="100%">
   <p>☕ <strong>Support the project:</strong> <a href="https://buymeacoffee.com/bmccruz">Buy Me a Coffee</a></p>
 </div>
 

@@ -1,4 +1,4 @@
-<div align="center" style="margin: 36px 0;">
+<div align="center" style="margin: 50px 0;">
   <p>☕ <strong>Support the project:</strong> <a href="https://buymeacoffee.com/bmccruz">Buy Me a Coffee</a></p>
 </div>
 

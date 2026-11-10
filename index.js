@@ -71,7 +71,7 @@ class AristonWaterHeater {
         )
         .setProps({
           minValue: 0,
-          maxValue: 1,
+          maxValue: 3,
           minStep: 1
         })
         .onGet(this.getTargetHeatingState.bind(this))
@@ -135,7 +135,8 @@ class AristonWaterHeater {
     changeTemperatureAPI(
       this,
       newTemp,
-      this.targetTemperature
+      this.targetTemperature,
+      false
     );
 
     this.targetTemperature = newTemp;
@@ -143,16 +144,47 @@ class AristonWaterHeater {
 
   setPower(value) {
 
-    const enabled =
-      value !==
-      hap.Characteristic.TargetHeatingCoolingState.OFF;
+    this.log("Mode receiced: " + value);
 
-    switchPowerAPI(
-      this,
-      enabled
-    );
+    switch (value) {
 
-    this.heaterOn = enabled;
+      case hap.Characteristic.TargetHeatingCoolingState.OFF:
+  
+        switchPowerAPI(this, false);
+        this.heaterOn = false;
+        break;
+  
+      case hap.Characteristic.TargetHeatingCoolingState.HEAT:
+  
+        switchPowerAPI(this, true);
+        this.heaterOn = true;
+        break;
+        
+      case hap.Characteristic.TargetHeatingCoolingState.COOL:
+
+        this.thermostatService.updateCharacteristic(
+          hap.Characteristic.TargetHeatingCoolingState,
+          hap.Characteristic.TargetHeatingCoolingState.HEAT
+        );
+      
+        switchPowerAPI(this, true);
+        this.heaterOn = true;
+        break;
+
+      case hap.Characteristic.TargetHeatingCoolingState.AUTO:
+  
+        switchPowerAPI(this, true);
+  
+        changeTemperatureAPI(
+          this,
+          this.targetTemperature,
+          this.targetTemperature,
+          true
+        );
+  
+        this.heaterOn = true;
+        break;
+    }
   }
 
   updateDeviceData() {
@@ -290,7 +322,8 @@ function getDeviceDataAPI(that) {
 function changeTemperatureAPI(
   that,
   newTemp,
-  oldTemp
+  oldTemp,
+  eco
 ) {
 
   request.post({
@@ -332,7 +365,7 @@ function changeTemperatureAPI(
       json: true,
 
       body: {
-        eco: false,
+        eco: eco,
         new: newTemp,
         old: oldTemp
       },

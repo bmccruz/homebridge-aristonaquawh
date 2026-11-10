@@ -135,8 +135,7 @@ class AristonWaterHeater {
     changeTemperatureAPI(
       this,
       newTemp,
-      this.targetTemperature,
-      false
+      this.targetTemperature
     );
 
     this.targetTemperature = newTemp;
@@ -157,6 +156,9 @@ class AristonWaterHeater {
       case hap.Characteristic.TargetHeatingCoolingState.HEAT:
   
         switchPowerAPI(this, true);
+        
+        switchEcoAPI(this, false);
+        
         this.heaterOn = true;
         break;
         
@@ -168,6 +170,9 @@ class AristonWaterHeater {
         );
       
         switchPowerAPI(this, true);
+
+        switchEcoAPI(this, false);
+
         this.heaterOn = true;
         break;
 
@@ -175,12 +180,7 @@ class AristonWaterHeater {
   
         switchPowerAPI(this, true);
   
-        changeTemperatureAPI(
-          this,
-          this.targetTemperature,
-          this.targetTemperature,
-          true
-        );
+        switchEcoAPI(this, true);
   
         this.heaterOn = true;
         break;
@@ -322,8 +322,7 @@ function getDeviceDataAPI(that) {
 function changeTemperatureAPI(
   that,
   newTemp,
-  oldTemp,
-  eco
+  oldTemp
 ) {
 
   request.post({
@@ -365,7 +364,7 @@ function changeTemperatureAPI(
       json: true,
 
       body: {
-        eco: eco,
+        eco: false,
         new: newTemp,
         old: oldTemp
       },
@@ -432,6 +431,73 @@ function switchPowerAPI(
         "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" +
         that.plantID +
         "/switch",
+
+      jar: that.cookieJar,
+      json: true,
+
+      body: enabled,
+
+      rejectUnauthorized: false
+
+    },
+    function(err, resp) {
+
+      if (err || resp.statusCode !== 200) {
+
+        that.log(
+          "Switch failed"
+        );
+
+        return;
+      }
+
+      that.log(
+        "Water heater " +
+        (enabled ? "ON" : "OFF")
+      );
+    });
+  });
+}
+
+function switchEcoAPI(
+  that,
+  enabled
+) {
+
+  request.post({
+
+    url:
+      "https://www.ariston-net.remotethermo.com/R2/Account/Login",
+
+    form: {
+      Email: that.username,
+      Password: that.password,
+      RememberMe: false
+    },
+
+    jar: that.cookieJar,
+    json: true,
+
+    rejectUnauthorized: false
+
+  },
+  function(err, resp) {
+
+    if (err || resp.statusCode !== 200) {
+
+      that.log(
+        "Login failed before switch"
+      );
+
+      return;
+    }
+
+    request.post({
+
+      url:
+        "https://www.ariston-net.remotethermo.com/api/v2/velis/medPlantData/" +
+        that.plantID +
+        "/switchEco",
 
       jar: that.cookieJar,
       json: true,

@@ -1,5 +1,7 @@
-<div align="center" top="50" bottom="50">
-  <p>☕ <strong>Support the project:</strong> <a href="https://buymeacoffee.com/bmccruz">Buy Me a Coffee</a></p>
+<div align="center">
+  <br />
+  ☕ <strong>Support the project:</strong> <a href="https://buymeacoffee.com/bmccruz">Buy Me a Coffee</a>
+  <br />
 </div>
 
 # homebridge-aristonaquawh

@@ -1,7 +1,13 @@
-☕ **Support the project:** [Buy Me a Coffee](https://buymeacoffee.com/bmccruz)
+<div align="center" style="margin: 36px 0;">
+  <p>☕ <strong>Support the project:</strong> <a href="https://buymeacoffee.com/bmccruz">Buy Me a Coffee</a></p>
+</div>
 
 # homebridge-aristonaquawh
 Homebridge module for Ariston Aqua Water Heater
+
+## License
+
+This project is licensed under the ISC License. See [LICENSE](LICENSE) for details.
 
 # Description
 

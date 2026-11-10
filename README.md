@@ -1,5 +1,4 @@
 <div align="center">
-  <br />
   <p>☕ <strong>Support the project:</strong> <a href="https://buymeacoffee.com/bmccruz">Buy Me a Coffee</a></p>
 </div>
 

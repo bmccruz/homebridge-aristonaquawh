@@ -9,12 +9,18 @@ Homebridge module for Ariston Aqua Water Heater
 
 This project is licensed under the ISC License. See [LICENSE](LICENSE) for details.
 
-# Description
+## Description
 
 Homebridge plugin gets the current temperature from Ariston Aqua Water Heaters, like Velis and Velis Tech Dry.
 The plugin uses the data from https://www.ariston-net.remotethermo.com/ so you need to have a account there, is the same as the Ariston mobile app. Put the account data on the plugin configuration (see below), the plandID for you device is the ID you see on the URL once you log in into the wesite.
 
-# Installation
+## Features
+
+- Reports the water heater's current temperature to HomeKit.
+- Supports thermostat modes: Off, Heat, and Auto (Ariston Eco Mode).
+- Maps the unsupported Cool mode to Heat.
+
+## Installation
 
 1. Install homebridge using: `npm install -g homebridge`
 2. Install this plugin using: `npm install -g homebridge-aristonaquawh`
@@ -26,7 +32,7 @@ may also clone the git repository into some directory like
 plugin directory as an option (`-P /usr/local/homebridge/plugins`, typically
 using `HOMEBRIDGE_OPTS` in `/etc/default/homebridge`).
 
-# Configuration
+## Configuration
  
 Example accessory config (needs to be added to the Homebridge `config.json`):
 
@@ -44,7 +50,7 @@ Example accessory config (needs to be added to the Homebridge `config.json`):
  ]
   ```
 
-# Update
+## Update
 
 Added support for Ariston Eco Mode through the HomeKit thermostat mode selector.
 
@@ -53,3 +59,7 @@ The HomeKit thermostat now supports all standard modes:
 2. Heat: Enables normal heating mode.
 3. Auto: Enables Ariston Eco Mode.
 4. Cool: Automatically falls back to Heat mode, as water heaters do not support cooling.
+
+## Contributing
+
+Bug reports and contributions are welcome. Please open an issue to report a problem or discuss a proposed change, and submit a pull request for contributions.

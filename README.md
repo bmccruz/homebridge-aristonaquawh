@@ -50,16 +50,6 @@ Example accessory config (needs to be added to the Homebridge `config.json`):
  ]
   ```
 
-## Update
-
-Added support for Ariston Eco Mode through the HomeKit thermostat mode selector.
-
-The HomeKit thermostat now supports all standard modes:
-1. Off: Turns the water heater off.
-2. Heat: Enables normal heating mode.
-3. Auto: Enables Ariston Eco Mode.
-4. Cool: Automatically falls back to Heat mode, as water heaters do not support cooling.
-
 ## Contributing
 
 Bug reports and contributions are welcome. Please open an issue to report a problem or discuss a proposed change, and submit a pull request for contributions.

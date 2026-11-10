@@ -46,4 +46,4 @@ The HomeKit thermostat now supports all standard modes:
 1. Off: Turns the water heater off.
 2. Heat: Enables normal heating mode.
 3. Auto: Enables Ariston Eco Mode.
-4.Cool: Automatically falls back to Heat mode, as water heaters do not support cooling.
+4. Cool: Automatically falls back to Heat mode, as water heaters do not support cooling.

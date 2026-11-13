@@ -1,18 +1,18 @@
 {
   "name": "homebridge-aristonaquawh",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Homebridge module for Ariston Aqua Water Heater",
   "main": "index.js",
   "engines": {
-    "node": ">=0.12.0",
-    "homebridge": ">=0.4.46"
+    "node": ">=16.0.0",
+    "homebridge": ">=1.5.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --check index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bmccruz/homebridge-aristonaquawh.git"
+    "url": "git+https://github.com"
   },
   "keywords": [
     "homebridge",
@@ -23,9 +23,9 @@
   "author": "bmccruz",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/bmccruz/homebridge-aristonaquawh/issues"
+    "url": "https://github.com"
   },
-  "homepage": "https://github.com/bmccruz/homebridge-aristonaquawh#readme",
+  "homepage": "https://github.com",
   "dependencies": {
     "requestretry": "^7.1.0"
   }

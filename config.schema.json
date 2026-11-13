@@ -1,0 +1,50 @@
+{
+  "pluginAlias": "AristonAquaWH",
+  "pluginType": "accessory",
+  "singular": false,
+  "headerDisplay": "Configure your Ariston Aqua Water Heater (Velis / Velis Tech Dry) using your Ariston Net RemoteThermo credentials.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Water Heater Name",
+        "type": "string",
+        "required": true,
+        "default": "Water Heater",
+        "description": "Name of the water heater as it will appear in the Apple Home app."
+      },
+      "username": {
+        "title": "Ariston Net Username (Email)",
+        "type": "string",
+        "required": true,
+        "placeholder": "email@email.com",
+        "description": "Email address used to log in to ://remotethermo.com and the Ariston mobile app."
+      },
+      "password": {
+        "title": "Ariston Net Password",
+        "type": "string",
+        "required": true,
+        "description": "Password for your Ariston Net account."
+      },
+      "plantID": {
+        "title": "Plant ID",
+        "type": "string",
+        "required": true,
+        "placeholder": "XXXX",
+        "description": "Device Plant ID shown in the URL after logging in to ://remotethermo.com."
+      },
+      "model": {
+        "title": "Model Name",
+        "type": "string",
+        "default": "VELIS Tech Dry",
+        "description": "Optional model name displayed in HomeKit accessory details."
+      },
+      "serial_number": {
+        "title": "Serial Number",
+        "type": "string",
+        "default": "123456789",
+        "description": "Optional serial number displayed in HomeKit accessory details."
+      }
+    }
+  }
+}
